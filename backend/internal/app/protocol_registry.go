@@ -137,10 +137,10 @@ func (s *Service) protocolIsSelectable(id string) bool {
 }
 
 func (s *Service) Plugins() []PluginView {
-	if s.pluginRuntime == nil {
-		return []PluginView{}
+	items := []PluginView{wxosLoginPluginView()}
+	if s.pluginRuntime != nil {
+		items = append(items, s.pluginRuntime.list()...)
 	}
-	items := s.pluginRuntime.list()
 	for index := range items {
 		items[index].Management = pluginManagementFromView(items[index])
 	}
@@ -178,6 +178,9 @@ func (s *Service) InstallPlugin(data []byte, fileName string) (PluginView, error
 	parsed, err := protocol.ParsePluginPackage(data)
 	if err != nil {
 		return PluginView{}, err
+	}
+	if parsed.Manifest.Metadata.ID == PluginWxosLogin {
+		return PluginView{}, fmt.Errorf("插件 ID %q 由内置登录插件保留", PluginWxosLogin)
 	}
 	if err := s.ensurePaymentPluginLifecycle(parsed.Manifest); err != nil {
 		return PluginView{}, err

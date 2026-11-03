@@ -18,7 +18,7 @@ export type WorkflowPluginStatus = "enabled" | "disabled" | "invalid" | string;
 
 export type PluginManagement = {
     origin: "official" | "system" | "uploaded";
-    kind: "protocol" | "application" | "payment";
+    kind: "protocol" | "application" | "payment" | "authentication";
     activationScope: "system" | "user";
     configurationScope: "none" | "system" | "user";
 };

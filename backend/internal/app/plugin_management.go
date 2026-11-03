@@ -106,6 +106,9 @@ var systemPaymentPolicies = map[string]PluginManagementView{
 }
 
 func pluginManagement(pluginID string, source string) PluginManagementView {
+	if pluginID == PluginWxosLogin && source != PluginOriginUploaded {
+		return PluginManagementView{Origin: PluginOriginSystem, Kind: "authentication", ActivationScope: PluginScopeSystem, ConfigurationScope: PluginConfigurationSystem}
+	}
 	if strings.TrimSpace(source) == PluginOriginUploaded {
 		return PluginManagementView{
 			Origin: PluginOriginUploaded, Kind: PluginKindProtocol,
@@ -322,7 +325,12 @@ func (s *Service) SetPluginPlatformAvailability(actor *model.User, pluginID stri
 	policy := pluginManagement(pluginID, source)
 	previousRuntimeEnabled := false
 	runtimeChanged := false
-	if policy.ActivationScope == PluginScopeSystem {
+	if pluginID == PluginWxosLogin && available {
+		if err := s.wxosLoginPlugin().CheckConfigured(); err != nil {
+			return AdminPluginStateView{}, err
+		}
+	}
+	if policy.ActivationScope == PluginScopeSystem && pluginID != PluginWxosLogin {
 		if !hasRuntime {
 			return AdminPluginStateView{}, fmt.Errorf("插件 %q 缺少运行时", pluginID)
 		}

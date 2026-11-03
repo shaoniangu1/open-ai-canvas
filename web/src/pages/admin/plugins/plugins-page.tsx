@@ -1,4 +1,5 @@
-import { App, Button, Input } from "antd";
+import { App, Button, Input, Modal } from "antd";
+import { WxosSettingsPanel } from "@/lib/plugins/builtin/wxos-login/settings-panel";
 import { Switch } from "@/pages/admin/ui/controls";
 import { AlipayCircleFilled, WechatFilled } from "@ant-design/icons";
 import { ZHIFUFM_LOGO_SRC } from "@/components/payment-brand-icons";
@@ -35,8 +36,9 @@ export default function AdminPluginsPage() {
     const [loading, setLoading] = useState(true);
     const [savingId, setSavingId] = useState("");
     const [uploadOpen, setUploadOpen] = useState(false);
+    const [wxosSettingsOpen, setWxosSettingsOpen] = useState(false);
     const [search, setSearch] = useState("");
-    const [kind, setKind] = useState<"all" | "application" | "protocol" | "payment" | "uploaded">("all");
+    const [kind, setKind] = useState<"all" | "application" | "protocol" | "payment" | "authentication" | "uploaded">("all");
     const [availability, setAvailability] = useState<"all" | "available" | "unavailable">("all");
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
@@ -214,18 +216,24 @@ export default function AdminPluginsPage() {
             },
         },
         {
-            title: "卸载",
+            title: "操作",
             key: "actions",
             width: 72,
             align: "center",
-            render: (_, item) =>
-                item.management.origin === "uploaded" ? (
-                    <Button danger type="text" size="small" aria-label={`卸载 ${item.manifest.name}`} icon={<Trash2 className="size-3.5" aria-hidden="true" />} onClick={() => remove(item)} />
-                ) : (
+            render: (_, item) => {
+                if (item.manifest.id === "wxos-login")
+                    return (
+                        <Button type="link" size="small" onClick={() => setWxosSettingsOpen(true)}>
+                            配置
+                        </Button>
+                    );
+                if (item.management.origin === "uploaded") return <Button danger type="text" size="small" aria-label={`卸载 ${item.manifest.name}`} icon={<Trash2 className="size-3.5" aria-hidden="true" />} onClick={() => remove(item)} />;
+                return (
                     <span title="内置插件不可卸载">
                         <Button type="text" size="small" disabled aria-label={`${item.manifest.name}为内置插件，不可卸载`} icon={<Trash2 className="size-3.5" aria-hidden="true" />} />
                     </span>
-                ),
+                );
+            },
         },
     ];
 
@@ -281,6 +289,7 @@ export default function AdminPluginsPage() {
                                 { value: "application", label: "官方应用插件" },
                                 { value: "protocol", label: "系统协议插件" },
                                 { value: "payment", label: "支付协议插件" },
+                                { value: "authentication", label: "登录插件" },
                                 { value: "uploaded", label: "上传的自定义插件" },
                             ]}
                         />
@@ -324,6 +333,9 @@ export default function AdminPluginsPage() {
                 }
             />
             <UploadPluginModal open={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={upload} />
+            <Modal open={wxosSettingsOpen} title="wxOS 登录插件" footer={null} destroyOnHidden onCancel={() => setWxosSettingsOpen(false)}>
+                <WxosSettingsPanel />
+            </Modal>
         </AdminPageFrame>
     );
 }
@@ -393,6 +405,7 @@ function managementOrder(value: PluginManagement) {
 }
 
 function managementLabel(value: PluginManagement) {
+    if (value.kind === "authentication") return "系统登录插件";
     if (value.origin === "uploaded") return "自定义插件";
     if (value.kind === "application") return "官方应用";
     return value.kind === "payment" ? "系统支付协议" : "系统协议";
